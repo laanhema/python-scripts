@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """List GUI applications from desktop files and identify GTK or Qt-based ones."""
 
 import os

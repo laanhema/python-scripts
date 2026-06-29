@@ -1,2 +1,5 @@
 # Ignore python runtime files
 __pycache__
+
+# Ignore temporary markdown files
+TEMP-1.md
