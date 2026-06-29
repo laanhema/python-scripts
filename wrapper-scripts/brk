@@ -1,0 +1,14 @@
+#!/bin/bash
+# Wrapper script for bulk-rename-kebab.py
+# Provides alias 'brk' and configurable path via environment variable
+
+# Use environment variable SCRIPT_PATH if set, otherwise default
+SCRIPT_PATH="${SCRIPT_PATH:-/home/lauri/github/python-scripts/bulk-rename-kebab.py}"
+
+if [ ! -f "$SCRIPT_PATH" ]; then
+    echo "Error: Script not found at $SCRIPT_PATH"
+    echo "Set SCRIPT_PATH environment variable to correct path"
+    exit 1
+fi
+
+python3 "$SCRIPT_PATH"
