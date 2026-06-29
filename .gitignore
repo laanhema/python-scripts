@@ -2,5 +2,4 @@
 __pycache__
 
 # Ignore temporary markdown files
-TEMP-1.md
-TEMP-2.md
+TEMP*.md
