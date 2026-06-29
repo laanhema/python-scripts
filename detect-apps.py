@@ -1,3 +1,5 @@
+"""List GUI applications from desktop files and identify GTK or Qt-based ones."""
+
 import os
 import re
 import subprocess
