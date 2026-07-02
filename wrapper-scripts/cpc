@@ -1,9 +1,9 @@
 #!/bin/bash
-# Wrapper script for previous-command-clipboard.py
-# Provides alias 'lc' and configurable path via environment variable
+# Wrapper script for copy-previous-command.py.py
+# Provides alias 'cpc' and configurable path via environment variable
 
 # Use environment variable SCRIPT_PATH if set, otherwise default
-SCRIPT_PATH="${SCRIPT_PATH:-/home/lauri/github/python-scripts/previous-command-clipboard.py}"
+SCRIPT_PATH="${SCRIPT_PATH:-/home/lauri/github/python-scripts/copy-previous-command.py}"
 
 if [ ! -f "$SCRIPT_PATH" ]; then
     echo "Error: Script not found at $SCRIPT_PATH"

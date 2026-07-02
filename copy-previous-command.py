@@ -1,23 +1,7 @@
 #!/usr/bin/env python3
 
-"""Copy the last executed terminal command to clipboard for easy reuse.
-
-Usage:
-    Add to ~/.bashrc:
-        lc() {
-            local wrapper="/home/lauri/.local/bin/lc"
-            local py_script="${SCRIPT_PATH:-/home/lauri/github/python-scripts/previous-command-clipboard.py}"
-            
-            if [ ! -f "$wrapper" ] || [ ! -f "$py_script" ]; then
-                echo "Error: Required scripts for 'lc' are missing." >&2
-                return 1
-            fi
-
-            local prev_cmd=$(fc -ln -2 -2 | sed 's/^[ \t]*//')
-            "$wrapper" "$prev_cmd"
-        }
-
-    Then run any command, type lc, and it copies the previous command.
+"""
+Copies the last executed terminal command to clipboard for easy reuse.
 """
 
 import os
@@ -27,6 +11,10 @@ import sys
 
 def copy_to_clipboard(text):
     """Copy text to clipboard using xclip, xsel, or termux-clipboard-set."""
+    temp_path = "/tmp/cpo_clipboard.txt"
+    with open(temp_path, "w", encoding="utf-8") as f:
+        f.write(text)
+
     commands = [
         (['xclip', '-selection', 'clipboard'], 'xclip'),
         (['xsel', '--clipboard', '--input'], 'xsel'),
@@ -35,22 +23,16 @@ def copy_to_clipboard(text):
 
     for cmd, name in commands:
         try:
-            process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-            process.stdin.write(text.encode())
-            process.stdin.close()
-            process.wait()
+            with open(temp_path, "r", encoding="utf-8") as f:
+                process = subprocess.Popen(cmd, stdin=f)
+                process.wait()
             if process.returncode == 0:
                 print(f"Copied to clipboard ({name}): {text}")
                 return True
         except FileNotFoundError:
             continue
         except Exception:
-            try:
-                process.terminate()
-                process.wait()
-            except Exception:
-                pass
-            continue
+            pass
 
     print("No clipboard tool found. Install xclip, xsel, or termux-clipboard-set.", file=sys.stderr)
     return False

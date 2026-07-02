@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Executes the provided command, captures its output, and copies it to the clipboard.
-
-Usage:
-    Add to ~/.bashrc:
-        cpo() {
-            local wrapper="/home/lauri/.local/bin/cpo"
-            local py_script="${SCRIPT_PATH:-/home/lauri/github/python-scripts/copy-previous-output.py}"
-            
-            if [ ! -f "$wrapper" ] || [ ! -f "$py_script" ]; then
-                echo "Error: Required scripts for 'cpo' are missing." >&2
-                return 1
-            fi
-
-            local prev_cmd=$(fc -ln -2 -2 | sed 's/^[ \t]*//')
-            "$wrapper" "$prev_cmd"
-        }
-
-    Then run any command, type cpo, and it re-runs the previous command and copies its output.
+Copies the last executed terminal command's output to clipboard for easy reuse.
 """
 
 import os
@@ -27,6 +10,10 @@ import sys
 
 def copy_to_clipboard(text):
     """Copy text to clipboard using wl-copy, xclip, xsel, or termux-clipboard-set."""
+    temp_path = "/tmp/cpo_clipboard.txt"
+    with open(temp_path, "w", encoding="utf-8") as f:
+        f.write(text)
+
     commands = [
         (['wl-copy'], 'wl-copy'),
         (['xclip', '-selection', 'clipboard'], 'xclip'),
@@ -36,10 +23,9 @@ def copy_to_clipboard(text):
 
     for cmd, name in commands:
         try:
-            process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            process.stdin.write(text.encode('utf-8'))
-            process.stdin.close()
-            process.wait()
+            with open(temp_path, "r", encoding="utf-8") as f:
+                process = subprocess.Popen(cmd, stdin=f, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                process.wait()
             if process.returncode == 0:
                 print(f"Copied output to clipboard ({name})")
                 return True
@@ -60,7 +46,7 @@ def main():
     
     try:
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        output = result.stdout.decode('utf-8')
+        output = result.stdout.decode('utf-8', errors='replace')
         
         if not output:
             print("Command produced no output.")

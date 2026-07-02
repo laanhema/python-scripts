@@ -3,13 +3,13 @@
 1. **Fix permissions:**
 
 ```bash
-chmod +x /path/to/file/python-scripts/wrapper-scripts/brk
+chmod +x /path/to/file/python-scripts/wrapper-scripts/scriptname
 ```
 
 2. **Create symlink:**
 
 ```bash
-sudo ln -sf /path/to/file/python-scripts/wrapper-scripts/brk ~/.local/bin/brk
+sudo ln -sf /path/to/file/python-scripts/wrapper-scripts/scriptname ~/.local/bin/scriptname
 ```
 
 3. **Add to PATH (if not already there):**
@@ -27,5 +27,5 @@ source ~/.bashrc
 4. **Usage:**
 
 ```bash
-brk
+scriptname
 ```
