@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 
 """
-The script works by:
-1. Converting files to kebab-case (lowercase with dashes)
-2. Preserving file extensions
-3. Skipping files that would not change (hidden files like .gitignore that don't match the word pattern)
-
-The script path can be set via the SCRIPT_PATH environment variable, or will default to
-/home/lauri/github/python-scripts/bulk-rename-kebabcase.py when running via wrapper script.
-If run directly as python3 bulk-rename-kebabcase.py, it will use the local path.
+This script renames all files in the current directory to kebab-case format.
 """
 
 import os
@@ -25,6 +18,8 @@ def main():
     current_dir = os.getcwd()
 
     for filename in os.listdir(current_dir):
+        if filename.startswith('.'):
+            continue
         if os.path.isfile(filename):
             name, ext = os.path.splitext(filename)
 

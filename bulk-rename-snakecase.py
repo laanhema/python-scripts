@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-This script renames all files in the current directory to snake_case format, ignoring itself.
+This script renames all files in the current directory to snake_case format.
 """
 
 import os
@@ -15,6 +15,8 @@ def to_snake_case(name):
 def main():
     cwd = os.getcwd()
     for filename in os.listdir(cwd):
+        if filename.startswith('.'):
+            continue
         if os.path.isfile(filename) and filename != os.path.basename(__file__):
             parts = filename.split('.')
             snake_parts = [to_snake_case(p) for p in parts]
