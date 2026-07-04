@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-"""The script works by:
+"""
+The script works by:
 1. Converting files to kebab-case (lowercase with dashes)
 2. Preserving file extensions
 3. Skipping files that would not change (hidden files like .gitignore that don't match the word pattern)
 
 The script path can be set via the SCRIPT_PATH environment variable, or will default to
-/home/lauri/github/python-scripts/bulk-rename-kebab.py when running via wrapper script.
-If run directly as python3 bulk-rename-kebab.py, it will use the local path.
+/home/lauri/github/python-scripts/bulk-rename-kebabcase.py when running via wrapper script.
+If run directly as python3 bulk-rename-kebabcase.py, it will use the local path.
 """
 
 import os
