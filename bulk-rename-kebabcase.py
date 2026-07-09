@@ -32,5 +32,10 @@ def main():
                 print(f"Renamed: {filename} -> {new_name}")
 
 
+"""
+when python runs a file directly, it sets "name" to "main"
+in this script it means that the main function is invoked only if you launch this file directly,
+not when you export its functions elsewhere:
+"""
 if __name__ == "__main__":
     main()
