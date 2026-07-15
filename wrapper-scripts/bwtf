@@ -1,9 +1,9 @@
 #!/bin/bash
-# Wrapper script for wav_to_flac.py
+# Wrapper script for wav-to-flac.py
 # Provides alias 'bwtf' and configurable path via environment variable
 
 # Use environment variable SCRIPT_PATH if set, otherwise default
-SCRIPT_PATH="${SCRIPT_PATH:-/home/lauri/github/python-scripts/wav_to_flac.py}"
+SCRIPT_PATH="${SCRIPT_PATH:-/home/lauri/github/python-scripts/wav-to-flac.py}"
 
 if [ ! -f "$SCRIPT_PATH" ]; then
     echo "Error: Script not found at $SCRIPT_PATH"
