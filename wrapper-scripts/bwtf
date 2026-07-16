@@ -11,4 +11,4 @@ if [ ! -f "$SCRIPT_PATH" ]; then
     exit 1
 fi
 
-python3 "$SCRIPT_PATH"
+python3 "$SCRIPT_PATH" "$@"

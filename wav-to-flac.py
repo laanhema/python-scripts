@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
-"""Convert all .wav files in the current directory (recursively) to FLAC using ffmpeg.
+"""Converts all .wav files in the current directory to .flac using ffmpeg.
 
-Originals are left untouched; converted files are written to a "converted" folder,
-mirroring the source directory structure.
+By default original files are left untouched; converted files are written to a "converted" folder, mirroring the source directory structure. When originals are not kept ("no"), converted files are written in place alongside the sources and the originals are deleted, with no "converted" folder created.
 """
 
+import argparse
 import os
 import shutil
 import subprocess
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from threading import Lock
@@ -47,7 +48,7 @@ def probe_format(wav_path):
     return 24, is_float
 
 
-def convert(wav_path, flac_path):
+def convert(wav_path, flac_path, compression_level, delete_original):
     if flac_path.exists():
         with print_lock:
             print(f"Skipped: {wav_path.name} (output already exists: {flac_path.name})", file=sys.stderr)
@@ -79,6 +80,7 @@ def convert(wav_path, flac_path):
                 "-nostdin",
                 "-i", str(wav_path),
                 *depth_args,
+                "-compression_level", str(compression_level),
                 str(flac_path),
             ],
             capture_output=True,
@@ -96,12 +98,58 @@ def convert(wav_path, flac_path):
             print(f"Failed: {wav_path.name} ({error})", file=sys.stderr)
         return False
 
+    # Mirror the source file's permission bits onto the converted file.
+    try:
+        shutil.copymode(wav_path, flac_path)
+    except OSError:
+        pass
+
+    deleted_note = ""
+    if delete_original:
+        try:
+            wav_path.unlink()
+            deleted_note = ", original deleted"
+        except OSError as e:
+            deleted_note = f", could not delete original ({e})"
+
     with print_lock:
-        print(f"Converted: {wav_path.name} -> {flac_path.name} ({depth_label})")
+        print(f"Converted: {wav_path.name} -> {flac_path.name} ({depth_label}{deleted_note})")
     return True
 
 
+def compression_level_arg(value):
+    try:
+        level = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"invalid compression level: {value!r} (must be an integer 1-12)")
+    if not 1 <= level <= 12:
+        raise argparse.ArgumentTypeError(f"compression level must be between 1 and 12, got {level}")
+    return level
+
+
 def main():
+    parser = argparse.ArgumentParser(
+        description="Converts all .wav files in the current directory to .flac using ffmpeg.",
+        usage="%(prog)s [compression_level {1-12}] [keep_original_files {yes/no}]",
+    )
+    parser.add_argument(
+        "compression_level",
+        nargs="?",
+        default=12,
+        type=compression_level_arg,
+        help="FLAC compression level 1-12 (default: 12).",
+    )
+    parser.add_argument(
+        "keep_original_files",
+        nargs="?",
+        default="yes",
+        choices=("no", "yes"),
+        metavar="keep_original_files",
+        help="Keep original .wav files after successful conversion (default: yes).",
+    )
+    args = parser.parse_args()
+    delete_original = args.keep_original_files == "no"
+
     if shutil.which("ffmpeg") is None:
         print("ffmpeg not found on PATH.", file=sys.stderr)
         sys.exit(1)
@@ -117,14 +165,32 @@ def main():
         print("No .wav files found in the current directory or its subdirectories.")
         return
 
+    time1 = time.time()
+
+    # Sum the original .wav sizes now, before any conversion (or deletion) happens.
+    accum_size = sum(p.stat().st_size for p in wav_files)
+
     succeeded = 0
     failed = 0
     skipped = 0
 
+    # When originals are kept, mirror the tree under "converted/"; otherwise
+    # write each .flac in place next to its source so it replaces the original.
+    if delete_original:
+        flac_paths = [p.with_suffix(".flac") for p in wav_files]
+    else:
+        flac_paths = [converted_root / p.relative_to(cwd).with_suffix(".flac") for p in wav_files]
+
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = [
-            executor.submit(convert, wav_path, converted_root / wav_path.relative_to(cwd).with_suffix(".flac"))
-            for wav_path in wav_files
+            executor.submit(
+                convert,
+                wav_path,
+                flac_path,
+                args.compression_level,
+                delete_original,
+            )
+            for wav_path, flac_path in zip(wav_files, flac_paths)
         ]
         for future in as_completed(futures):
             result = future.result()
@@ -136,6 +202,13 @@ def main():
                 skipped += 1
 
     print(f"\nDone: {succeeded} converted, {failed} failed, {skipped} skipped, {len(wav_files)} total.")
+
+    # Sum the resulting .flac sizes for the space-saving comparison.
+    final_accum_size = sum(p.stat().st_size for p in flac_paths if p.is_file())
+
+    saved_gib = (accum_size - final_accum_size) / 1024 ** 3
+    print(f"Conversion completed. Managed to shave off {saved_gib:.2f} GiB.")
+    print(f"Time Elapsed: {time.time() - time1:.2f} seconds")
 
     if failed:
         sys.exit(1)
