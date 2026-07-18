@@ -156,10 +156,11 @@ def main():
     parser.add_argument(
         "compression_level",
         nargs="?",
-        default=0,
+        default=2,
         type=compression_level_arg,
-        help="LAME algorithm quality 0-9 (default: 0). Lower levels cost more "
-             "CPU time for slightly better quality at a given bitrate.",
+        help="LAME algorithm quality 0-9 (default: 2, LAME's recommended "
+             "sweet spot). Lower levels cost more CPU time for a quality gain "
+             "that is inaudible at 320k; higher levels encode faster.",
     )
     args = parser.parse_args()
     delete_original = args.keep_original_files == "no"
