@@ -14,12 +14,13 @@ from threading import Lock
 
 
 def default_worker_count():
-    """One worker per two available CPUs, respecting cgroup/affinity limits."""
+    """One worker per available CPU minus one, leaving a core for the OS and
+    respecting cgroup/affinity limits."""
     try:
         available = len(os.sched_getaffinity(0))
     except AttributeError:  # Not available on every platform.
         available = os.cpu_count() or 4
-    return max(1, available // 2)
+    return max(1, available - 1)
 
 
 MAX_WORKERS = default_worker_count()
@@ -27,6 +28,26 @@ MAX_WORKERS = default_worker_count()
 print_lock = Lock()
 
 BITRATE = "256k"
+
+MIN_PYTHON = (3, 12)  # rglob(case_sensitive=...) requires Python 3.12+.
+REQUIRED_ENCODER = "libopus"
+
+
+def encoder_available(name):
+    """True if the local ffmpeg build includes the named encoder.
+
+    An unknown encoder still makes ffmpeg exit 0, so this matches on the
+    "Encoder <name> ..." header ffmpeg prints to stdout for a real one.
+    """
+    try:
+        result = subprocess.run(
+            ["ffmpeg", "-hide_banner", "-h", f"encoder={name}"],
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return False
+    return result.stdout.startswith(f"Encoder {name} ")
 
 
 def convert(wav_path, opus_path, compression_level, delete_original):
@@ -144,8 +165,16 @@ def main():
     args = parser.parse_args()
     delete_original = args.keep_original_files == "no"
 
+    if sys.version_info < MIN_PYTHON:
+        print(f"Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}+ is required.", file=sys.stderr)
+        sys.exit(1)
+
     if shutil.which("ffmpeg") is None:
         print("ffmpeg not found on PATH.", file=sys.stderr)
+        sys.exit(1)
+
+    if not encoder_available(REQUIRED_ENCODER):
+        print(f"ffmpeg is installed but lacks the required '{REQUIRED_ENCODER}' encoder.", file=sys.stderr)
         sys.exit(1)
 
     cwd = Path.cwd()
