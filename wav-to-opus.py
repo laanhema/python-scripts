@@ -141,7 +141,24 @@ def compression_level_arg(value):
     return level
 
 
+def force_utf8_output():
+    """Print to the console as UTF-8 regardless of the OS locale.
+
+    On Windows stdout defaults to the legacy code page (e.g. cp1252), which
+    can't encode filenames containing characters outside that page (Cyrillic,
+    CJK, ...), so printing them raises UnicodeEncodeError. Reconfiguring to
+    UTF-8 with errors="replace" makes such names printable everywhere.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main():
+    force_utf8_output()
+
     parser = argparse.ArgumentParser(
         description="Converts all .wav files inside current directory to .opus using ffmpeg.",
         usage="%(prog)s [keep_original_files] [compression_level]",
